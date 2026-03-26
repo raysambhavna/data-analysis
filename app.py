@@ -4,7 +4,11 @@ import numpy as np
 import io
 import pickle
 
-from ydata_profiling import ProfileReport
+try:
+    from ydata_profiling import ProfileReport
+    PROFILING_AVAILABLE = True
+except ImportError:
+    PROFILING_AVAILABLE = False
 from streamlit.components.v1 import html
 
 from sklearn.model_selection import train_test_split
@@ -51,23 +55,26 @@ if uploaded_file:
     st.write("Shape:", df.shape)
 
 if df is not None:
-    if st.checkbox("Generate EDA Report (Slow)"):
-        profile = ProfileReport(df, minimal=True)
-        st.write("Report generated")
-
     st.subheader("📈 Automated EDA (YData Profiling)")
 
     if "profile_html" not in st.session_state:
         st.session_state.profile_html = None
 
-    if st.button("Generate Profiling Report"):
-        with st.spinner("Generating report..."):
-            profile = ProfileReport(df, explorative=True)
-            st.session_state.profile_html = profile.to_html()
+    if PROFILING_AVAILABLE:
+        if st.checkbox("Generate EDA Report (Slow)"):
+            profile = ProfileReport(df, minimal=True)
+            st.write("Report generated")
 
-    if st.session_state.profile_html:
-        with st.expander("View Profiling Report", expanded=False):
-            html(st.session_state.profile_html, height=700, scrolling=True)
+        if st.button("Generate Profiling Report"):
+            with st.spinner("Generating report..."):
+                profile = ProfileReport(df, explorative=True)
+                st.session_state.profile_html = profile.to_html()
+
+        if st.session_state.profile_html:
+            with st.expander("View Profiling Report", expanded=False):
+                html(st.session_state.profile_html, height=700, scrolling=True)
+    else:
+        st.info("Profiling feature is disabled because ydata-profiling is not installed in this environment.")
 
     st.subheader("🎯 Select Target Column")
     target_col = st.selectbox("Choose target column", df.columns)
